@@ -70,8 +70,9 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
         const { owner, shopname, businesstype, phone, location, building } = req.body;
         let photo_url = null;
         if (req.file) {
-            const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+            const baseUrl = 'https://vendroo-server.onrender.com';
             photo_url = `${baseUrl}/uploads/${req.file.filename}`;
+
 
         }
 
