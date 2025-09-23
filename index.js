@@ -45,7 +45,7 @@ const createTable = async () => {
       id SERIAL PRIMARY KEY,
       owner VARCHAR(100) NOT NULL,
       shopname VARCHAR(100) NOT NULL,
-      businessType VARCHAR(100) NOT NULL,
+      businesstype VARCHAR(100) NOT NULL,
       phone VARCHAR(20) NOT NULL,
       location VARCHAR(100) NOT NULL,
       building VARCHAR(100),
@@ -69,19 +69,19 @@ app.get("/", (req, res) => {
 // POST - Save registration form
 app.post("/api/form", upload.single("photo"), async (req, res) => {
   try {
-    const { owner, phone, location, building } = req.body;
+    const { owner, shopname, businesstype, phone, location, building } = req.body;
     let photo_url = null;
     if (req.file) {
       photo_url = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
     }
 
-    if (!owner || !phone || !location) {
-      return res.status(400).json({ error: "Owner, phone, and location are required" });
+    if (!owner || !phone || !location || !shopname || !businesstype) {
+      return res.status(400).json({ error: "Owner, shopname, businesstype, phone, and location are required" });
     }
 
     const result = await pool.query(
-      "INSERT INTO form_entries (owner, phone, location, building, photo_url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [owner, phone, location, building || "", photo_url]
+      "INSERT INTO form_entries (owner, shopname, businesstype, phone, location, building, photo_url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [owner, shopname, businesstype, phone, location, building || "", photo_url]
     );
 
     res.json({ success: true, data: result.rows[0] });
