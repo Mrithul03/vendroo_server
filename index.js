@@ -31,12 +31,10 @@ const upload = multer({ storage });
 
 // PostgreSQL connection
 const pool = new Pool({
-    user: process.env.DB_USER || "postgres",
-    host: process.env.DB_HOST || "localhost",
-    database: process.env.DB_NAME || "vendroo",
-    password: process.env.DB_PASS || "postgres",
-    port: process.env.DB_PORT || 5432,
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
+
 
 // Create table if not exists
 const createTable = async () => {
@@ -72,7 +70,8 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
         const { owner, shopname, businesstype, phone, location, building } = req.body;
         let photo_url = null;
         if (req.file) {
-            photo_url = `https://vendroo-server-pjjr.vercel.app/uploads/${req.file.filename}`;
+            const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+            photo_url = `${baseUrl}/uploads/${req.file.filename}`;
 
         }
 
