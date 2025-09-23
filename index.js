@@ -62,12 +62,12 @@ const createTable = async () => {
 };
 
 // ---------------- Routes ----------------
-// Test route
+
 app.get("/", (req, res) => {
   res.send("🚀 API is running with PostgreSQL!");
 });
 
-// POST - Save registration form with image
+
 app.post("/api/form", upload.single("photo"), async (req, res) => {
   try {
     const { owner, shopname, businesstype, phone, location, building } =
@@ -79,7 +79,6 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
       });
     }
 
-    // Build public URL for the uploaded image
     let photo_url = null;
     if (req.file) {
       const baseUrl =
@@ -103,7 +102,6 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
   }
 });
 
-// GET - Fetch all form entries
 app.get("/api/form", async (req, res) => {
   try {
     const result = await pool.query(
