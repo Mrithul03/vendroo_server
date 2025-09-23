@@ -84,7 +84,7 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
     if (req.file) {
       const baseUrl =
         process.env.BASE_URL ||
-        `https://${`https://https//vendroo-server.onrender.com`}` ||
+        `https://${`vendroo-server.onrender.com`}` ||
         `http://localhost:${process.env.PORT || 5000}`;
       photo_url = `${baseUrl}/uploads/${req.file.filename}`;
     }
