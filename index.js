@@ -72,7 +72,8 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
         const { owner, shopname, businesstype, phone, location, building } = req.body;
         let photo_url = null;
         if (req.file) {
-            photo_url = `http://localhost:${process.env.PORT || 5000}/uploads/${req.file.filename}`;
+            photo_url = `https://vendroo-server-pjjr.vercel.app/uploads/${req.file.filename}`;
+
         }
 
         if (!owner || !phone || !location || !shopname || !businesstype) {
