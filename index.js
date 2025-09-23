@@ -7,11 +7,10 @@ import path from "path";
 import fs from "fs";
 
 dotenv.config();
-
 const { Pool } = pkg;
 const app = express();
 
-// Enable CORS for all origins (Flutter app can call this API)
+// ---------------- Middleware ----------------
 app.use(cors());
 app.use(express.json());
 
@@ -63,8 +62,7 @@ const createTable = async () => {
 };
 
 // ---------------- Routes ----------------
-
-// Test Route
+// Test route
 app.get("/", (req, res) => {
   res.send("🚀 API is running with PostgreSQL!");
 });
@@ -81,9 +79,13 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
       });
     }
 
+    // Build public URL for the uploaded image
     let photo_url = null;
     if (req.file) {
-      const baseUrl = process.env.BASE_URL || `https://${process.env.RENDER_EXTERNAL_URL}`;
+      const baseUrl =
+        process.env.BASE_URL ||
+        `https://${`https://https//vendroo-server.onrender.com`}` ||
+        `http://localhost:${process.env.PORT || 5000}`;
       photo_url = `${baseUrl}/uploads/${req.file.filename}`;
     }
 
