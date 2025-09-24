@@ -54,12 +54,14 @@ const createTable = async () => {
 
   const todoTable = `
     CREATE TABLE IF NOT EXISTS todos (
-      id SERIAL PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      description TEXT,
-      completed BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    completed BOOLEAN DEFAULT false,
+    due_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
   `;
 
   try {
@@ -128,14 +130,15 @@ app.get("/api/form", async (req, res) => {
 // Create To-Do
 app.post("/api/todos", async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, due_date } = req.body;
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
     }
 
     const result = await pool.query(
-      `INSERT INTO todos (title, description) VALUES ($1, $2) RETURNING *`,
-      [title, description || ""]
+      `INSERT INTO todos (title, description, due_date) 
+       VALUES ($1, $2, $3) RETURNING *`,
+      [title, description || "", due_date || null]
     );
 
     res.json({ success: true, data: result.rows[0] });
@@ -144,6 +147,7 @@ app.post("/api/todos", async (req, res) => {
     res.status(500).json({ error: "Database insert failed" });
   }
 });
+
 
 // Get To-Dos with search & filter
 app.get("/api/todos", async (req, res) => {
@@ -183,15 +187,16 @@ app.get("/api/todos", async (req, res) => {
 app.put("/api/todos/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, completed } = req.body;
+    const { title, description, completed, due_date } = req.body;
 
     const result = await pool.query(
       `UPDATE todos SET 
         title = COALESCE($1, title),
         description = COALESCE($2, description),
-        completed = COALESCE($3, completed)
-      WHERE id = $4 RETURNING *`,
-      [title || null, description || null, completed, id]
+        completed = COALESCE($3, completed),
+        due_date = COALESCE($4, due_date)
+      WHERE id = $5 RETURNING *`,
+      [title || null, description || null, completed, due_date || null, id]
     );
 
     if (result.rows.length === 0) {
