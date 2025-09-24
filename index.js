@@ -15,11 +15,9 @@ app.use(cors());
 app.use(express.json());
 
 // ---------------- Multer Setup ----------------
-// Create uploads folder if it doesn't exist
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// Configure storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
@@ -38,9 +36,9 @@ const pool = new Pool({
       : false,
 });
 
-// ---------------- Create Table if Not Exists ----------------
+// ---------------- Create Tables ----------------
 const createTable = async () => {
-  const query = `
+  const formTable = `
     CREATE TABLE IF NOT EXISTS form_entries (
       id SERIAL PRIMARY KEY,
       owner VARCHAR(100) NOT NULL,
@@ -53,21 +51,32 @@ const createTable = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;
+
+  const todoTable = `
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      completed BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
-    await pool.query(query);
-    console.log("✅ Table 'form_entries' is ready");
+    await pool.query(formTable);
+    await pool.query(todoTable);
+    console.log("✅ Tables 'form_entries' & 'todos' are ready");
   } catch (err) {
-    console.error("❌ Error creating table:", err);
+    console.error("❌ Error creating tables:", err);
   }
 };
 
 // ---------------- Routes ----------------
-
 app.get("/", (req, res) => {
   res.send("🚀 API is running with PostgreSQL!");
 });
 
-
+// ---------------- Form APIs ----------------
 app.post("/api/form", upload.single("photo"), async (req, res) => {
   try {
     const { owner, shopname, businesstype, phone, location, building } =
@@ -83,7 +92,7 @@ app.post("/api/form", upload.single("photo"), async (req, res) => {
     if (req.file) {
       const baseUrl =
         process.env.BASE_URL ||
-        `https://${`vendroo-server.onrender.com`}` ||
+        `https://vendroo-server.onrender.com` ||
         `http://localhost:${process.env.PORT || 5000}`;
       photo_url = `${baseUrl}/uploads/${req.file.filename}`;
     }
@@ -114,7 +123,110 @@ app.get("/api/form", async (req, res) => {
   }
 });
 
-// Serve uploaded files statically
+// ---------------- To-Do APIs ----------------
+
+// Create To-Do
+app.post("/api/todos", async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO todos (title, description) VALUES ($1, $2) RETURNING *`,
+      [title, description || ""]
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Insert To-Do error:", err);
+    res.status(500).json({ error: "Database insert failed" });
+  }
+});
+
+// Get To-Dos with search & filter
+app.get("/api/todos", async (req, res) => {
+  try {
+    const { search, status } = req.query;
+
+    let query = "SELECT * FROM todos";
+    const params = [];
+    const conditions = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`title ILIKE $${params.length}`);
+    }
+
+    if (status === "completed") {
+      conditions.push(`completed = true`);
+    } else if (status === "pending") {
+      conditions.push(`completed = false`);
+    }
+
+    if (conditions.length > 0) {
+      query += " WHERE " + conditions.join(" AND ");
+    }
+
+    query += " ORDER BY id DESC";
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Fetch To-Do error:", err);
+    res.status(500).json({ error: "Database fetch failed" });
+  }
+});
+
+// Update To-Do
+app.put("/api/todos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, completed } = req.body;
+
+    const result = await pool.query(
+      `UPDATE todos SET 
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        completed = COALESCE($3, completed)
+      WHERE id = $4 RETURNING *`,
+      [title || null, description || null, completed, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "To-Do not found" });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Update To-Do error:", err);
+    res.status(500).json({ error: "Database update failed" });
+  }
+});
+
+// Delete To-Do
+app.delete("/api/todos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `DELETE FROM todos WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "To-Do not found" });
+    }
+
+    res.json({ success: true, message: "To-Do deleted", data: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Delete To-Do error:", err);
+    res.status(500).json({ error: "Database delete failed" });
+  }
+});
+
+// ---------------- Static Files ----------------
 app.use("/uploads", express.static(uploadDir));
 
 // ---------------- Start Server ----------------
