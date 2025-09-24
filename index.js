@@ -79,51 +79,51 @@ app.get("/", (req, res) => {
 });
 
 // ---------------- Form APIs ----------------
-app.post("/api/form", upload.single("photo"), async (req, res) => {
-  try {
-    const { owner, shopname, businesstype, phone, location, building } =
-      req.body;
+// app.post("/api/form", upload.single("photo"), async (req, res) => {
+//   try {
+//     const { owner, shopname, businesstype, phone, location, building } =
+//       req.body;
 
-    if (!owner || !shopname || !businesstype || !phone || !location) {
-      return res.status(400).json({
-        error: "Owner, shopname, businesstype, phone, and location are required",
-      });
-    }
+//     if (!owner || !shopname || !businesstype || !phone || !location) {
+//       return res.status(400).json({
+//         error: "Owner, shopname, businesstype, phone, and location are required",
+//       });
+//     }
 
-    let photo_url = null;
-    if (req.file) {
-      const baseUrl =
-        process.env.BASE_URL ||
-        `https://vendroo-server.onrender.com` ||
-        `http://localhost:${process.env.PORT || 5000}`;
-      photo_url = `${baseUrl}/uploads/${req.file.filename}`;
-    }
+//     let photo_url = null;
+//     if (req.file) {
+//       const baseUrl =
+//         process.env.BASE_URL ||
+//         `https://vendroo-server.onrender.com` ||
+//         `http://localhost:${process.env.PORT || 5000}`;
+//       photo_url = `${baseUrl}/uploads/${req.file.filename}`;
+//     }
 
-    const result = await pool.query(
-      `INSERT INTO form_entries 
-        (owner, shopname, businesstype, phone, location, building, photo_url) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [owner, shopname, businesstype, phone, location, building || "", photo_url]
-    );
+//     const result = await pool.query(
+//       `INSERT INTO form_entries 
+//         (owner, shopname, businesstype, phone, location, building, photo_url) 
+//         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+//       [owner, shopname, businesstype, phone, location, building || "", photo_url]
+//     );
 
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error("❌ Insert error:", err);
-    res.status(500).json({ error: "Database insert failed" });
-  }
-});
+//     res.json({ success: true, data: result.rows[0] });
+//   } catch (err) {
+//     console.error("❌ Insert error:", err);
+//     res.status(500).json({ error: "Database insert failed" });
+//   }
+// });
 
-app.get("/api/form", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM form_entries ORDER BY id DESC"
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Fetch error:", err);
-    res.status(500).json({ error: "Database fetch failed" });
-  }
-});
+// app.get("/api/form", async (req, res) => {
+//   try {
+//     const result = await pool.query(
+//       "SELECT * FROM form_entries ORDER BY id DESC"
+//     );
+//     res.json(result.rows);
+//   } catch (err) {
+//     console.error("❌ Fetch error:", err);
+//     res.status(500).json({ error: "Database fetch failed" });
+//   }
+// });
 
 // ---------------- To-Do APIs ----------------
 
